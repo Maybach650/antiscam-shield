@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anti-Scam Shield</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f; --surface: #12121a; --border: #1e1e2e;
+    --accent: #ff3c5f; --accent2: #00f5a0; --text: #e8e8f0; --muted: #5a5a7a;
+    --font-head: 'Syne', sans-serif; --font-mono: 'Space Mono', monospace;
+  }
+  body {
+    background: var(--bg); color: var(--text); font-family: var(--font-mono);
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; padding: 40px 20px; overflow-x: hidden;
+  }
+  body::before {
+    content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(ellipse at 20% 20%, rgba(255,60,95,0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0,245,160,0.05) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+  .container { width: 100%; max-width: 720px; position: relative; z-index: 1; }
+  header { text-align: center; margin-bottom: 48px; animation: fadeDown 0.6s ease; }
+  .logo { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .shield-icon {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent), #ff6b35);
+    border-radius: 12px; display: flex; align-items: center;
+    justify-content: center; font-size: 24px;
+    box-shadow: 0 0 30px rgba(255,60,95,0.4);
+  }
+  h1 { font-family: var(--font-head); font-size: 32px; font-weight: 800; letter-spacing: -1px;
+    background: linear-gradient(135deg, #fff 40%, var(--muted));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { font-size: 12px; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 16px; }
+  .card-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab {
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-family: var(--font-mono);
+    font-size: 11px; cursor: pointer; letter-spacing: 2px; transition: all 0.2s;
+  }
+  .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  textarea {
+    width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-family: var(--font-mono);
+    font-size: 13px; line-height: 1.7; padding: 16px; resize: vertical;
+    min-height: 180px; outline: none; transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  .upload-area {
+    border: 2px dashed var(--border); border-radius: 10px; padding: 40px;
+    text-align: center; cursor: pointer; transition: all 0.2s; display: none;
+  }
+  .upload-area.active-tab { display: block; }
+  .upload-area:hover { border-color: var(--accent); }
+  .upload-area input { display: none; }
+  .upload-icon { font-size: 36px; margin-bottom: 12px; }
+  .upload-text { color: var(--muted); font-size: 12px; line-height: 1.6; }
+  .upload-text strong { color: var(--text); }
+  .file-selected { color: var(--accent2); font-size: 12px; margin-top: 8px; }
+
+  .btn {
+    width: 100%; padding: 16px; background: var(--accent); border: none;
+    border-radius: 10px; color: white; font-family: var(--font-head);
+    font-size: 15px; font-weight: 700; letter-spacing: 1px;
+    cursor: pointer; transition: all 0.2s; margin-top: 12px;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,60,95,0.4); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .result-card { display: none; }
+  .result-card.show { display: block; animation: fadeUp 0.4s ease; }
+  .result-inner { border-radius: 12px; padding: 24px; text-align: center; }
+  .result-inner.scam { background: rgba(255,60,95,0.08); border: 1px solid rgba(255,60,95,0.3); }
+  .result-inner.normal { background: rgba(0,245,160,0.08); border: 1px solid rgba(0,245,160,0.3); }
+  .result-emoji { font-size: 48px; margin-bottom: 12px; }
+  .result-label { font-family: var(--font-head); font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .result-label.scam { color: var(--accent); }
+  .result-label.normal { color: var(--accent2); }
+  .result-desc { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  .transcribed-text {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; font-size: 12px; color: var(--text);
+    text-align: left; margin-bottom: 16px; line-height: 1.6; display: none;
+  }
+  .transcribed-text.show { display: block; }
+  .transcribed-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; margin-bottom: 6px; }
+  .confidence-bar { background: rgba(255,255,255,0.05); border-radius: 99px; height: 6px; overflow: hidden; margin: 0 auto; max-width: 300px; }
+  .confidence-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+  .confidence-fill.scam { background: var(--accent); }
+  .confidence-fill.normal { background: var(--accent2); }
+  .confidence-text { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+  .examples { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .example-btn {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted); font-family: var(--font-mono);
+    font-size: 11px; padding: 10px 12px; cursor: pointer;
+    text-align: left; transition: all 0.2s; line-height: 1.4;
+  }
+  .example-btn:hover { border-color: var(--accent); color: var(--text); }
+  .tag { display: inline-block; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-bottom: 4px; letter-spacing: 1px; }
+  .tag.scam { background: rgba(255,60,95,0.2); color: var(--accent); }
+  .tag.normal { background: rgba(0,245,160,0.2); color: var(--accent2); }
+
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .stat-box { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
+  .stat-num { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: var(--text); }
+  .stat-lbl { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="shield-icon">🛡</div>
+      <h1>Anti-Scam Shield</h1>
+    </div>
+    <p class="subtitle">AI-powered scam call detector · Turkmen & Russian</p>
+  </header>
+
+  <div class="card">
+    <div class="card-label">// Input method</div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('text')">TEXT</button>
+      <button class="tab" onclick="switchTab('audio')">AUDIO FILE</button>
+    </div>
+
+    <!-- Text input -->
+    <div id="textInput">
+      <textarea id="dialogueInput" placeholder="Scammer: Salam, men bankdan jan edyarin...&#10;Victim: Hawa?&#10;Scammer: Hasabynyzda subheli hereketler bar..."></textarea>
+      <button class="btn" onclick="analyzeText()" id="analyzeBtn">ANALYZE DIALOGUE</button>
+    </div>
+
+    <!-- Audio input -->
+    <div class="upload-area" id="audioInput" onclick="document.getElementById('audioFile').click()">
+      <input type="file" id="audioFile" accept=".wav,.mp3,.ogg,.m4a" onchange="fileSelected(this)">
+      <div class="upload-icon">🎙</div>
+      <div class="upload-text">
+        <strong>Click to upload audio file</strong><br>
+        Supports WAV, MP3, OGG, M4A<br>
+        The audio will be transcribed and analyzed
+      </div>
+      <div class="file-selected" id="fileSelectedText"></div>
+    </div>
+    <button class="btn" onclick="analyzeAudio()" id="audioBtn" style="display:none">TRANSCRIBE & ANALYZE</button>
+  </div>
+
+  <div class="card result-card" id="resultCard">
+    <div class="card-label">// Detection result</div>
+    <div class="transcribed-text" id="transcribedText">
+      <div class="transcribed-label">TRANSCRIBED TEXT</div>
+      <div id="transcribedContent"></div>
+    </div>
+    <div class="result-inner" id="resultInner">
+      <div class="result-emoji" id="resultEmoji"></div>
+      <div class="result-label" id="resultLabel"></div>
+      <div class="result-desc" id="resultDesc"></div>
+      <div class="confidence-bar">
+        <div class="confidence-fill" id="confidenceFill" style="width:0%"></div>
+      </div>
+      <div class="confidence-text" id="confidenceText"></div>
+    </div>
+  </div>
+
+  <div class="card" id="examplesCard">
+    <div class="card-label">// Try examples</div>
+    <div class="examples">
+      <button class="example-btn" onclick="loadExample('scam_tk')">
+        <span class="tag scam">SCAM · TK</span><br>Bank scam in Turkmen
+      </button>
+      <button class="example-btn" onclick="loadExample('scam_ru')">
+        <span class="tag scam">SCAM · RU</span><br>Police scam in Russian
+      </button>
+      <button class="example-btn" onclick="loadExample('normal_tk')">
+        <span class="tag normal">NORMAL · TK</span><br>Everyday call in Turkmen
+      </button>
+      <button class="example-btn" onclick="loadExample('normal_ru')">
+        <span class="tag normal">NORMAL · RU</span><br>Everyday call in Russian
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">// Model stats</div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-num">96.6%</div><div class="stat-lbl">Accuracy</div></div>
+      <div class="stat-box"><div class="stat-num">145</div><div class="stat-lbl">Training samples</div></div>
+      <div class="stat-box"><div class="stat-num">2</div><div class="stat-lbl">Languages</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var examples = {
+  scam_tk: "Scammer: Salam, men Turkmenistanyn Milli Bankyndan jan edyarin. Hasabynyzda subheli hereketler bar.\nVictim: Nahili hereketler?\nScammer: 3000 manat gecirelmek islenyer. Duruzmaklyk ucin PIN kodunuzy aydy.\nVictim: PIN kodum 4521.\nScammer: Sag bolun, hasap goraldy.",
+  scam_ru: "Scammer: Zdravstvujte, sledovatel Petrov iz MVD. Na vas otkryto ugolovnoe delo.\nVictim: Kakoe delo? Ya nichego ne delal!\nScammer: Moshennichestvo v internete. Mozhno zakryt za 15000 rublej.\nVictim: Eto zakonno?\nScammer: Eto dosudebnoe uregulirovanie.",
+  normal_tk: "Caller: Salam Merdan, bu gun agsham futbola gidyanizmi?\nMerdan: Salam! Hawa, sagat 7-de. Gelersinmi?\nCaller: Hawa geleyin. Bilet gerekmi?\nMerdan: Yok, mugt. Gel.",
+  normal_ru: "Caller: Privet Masha, ty segodnya svobodna vecherom?\nMasha: Privet! Da, nichego ne planirovala. A chto?\nCaller: Pojdom v kino?\nMasha: S udovolstviem, vo skolko?\nCaller: V 19:00 u kinoteatra."
+};
+
+function switchTab(tab) {
+  var tabs = document.querySelectorAll('.tab');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  event.target.classList.add('active');
+
+  if (tab === 'text') {
+    document.getElementById('textInput').style.display = 'block';
+    document.getElementById('audioInput').classList.remove('active-tab');
+    document.getElementById('audioBtn').style.display = 'none';
+    document.getElementById('examplesCard').style.display = 'block';
+  } else {
+    document.getElementById('textInput').style.display = 'none';
+    document.getElementById('audioInput').classList.add('active-tab');
+    document.getElementById('audioBtn').style.display = 'block';
+    document.getElementById('examplesCard').style.display = 'none';
+  }
+  document.getElementById('resultCard').classList.remove('show');
+}
+
+function fileSelected(input) {
+  if (input.files && input.files[0]) {
+    document.getElementById('fileSelectedText').textContent = 'Selected: ' + input.files[0].name;
+  }
+}
+
+function loadExample(key) {
+  document.getElementById('dialogueInput').value = examples[key];
+  document.getElementById('resultCard').classList.remove('show');
+}
+
+function showResult(label, confidence, transcribedText) {
+  var isScam = label === 1;
+  var conf = Math.round(confidence * 100);
+  var inner = document.getElementById('resultInner');
+  inner.className = 'result-inner ' + (isScam ? 'scam' : 'normal');
+  document.getElementById('resultEmoji').textContent = isScam ? '🚨' : '✅';
+  document.getElementById('resultLabel').textContent = isScam ? 'SCAM DETECTED' : 'NORMAL CALL';
+  document.getElementById('resultLabel').className = 'result-label ' + (isScam ? 'scam' : 'normal');
+  document.getElementById('resultDesc').textContent = isScam
+    ? 'This dialogue shows signs of a scam call. Be careful!'
+    : 'This dialogue appears to be a normal conversation.';
+  var fill = document.getElementById('confidenceFill');
+  fill.className = 'confidence-fill ' + (isScam ? 'scam' : 'normal');
+  fill.style.width = conf + '%';
+  document.getElementById('confidenceText').textContent = 'Confidence: ' + conf + '%';
+
+  if (transcribedText) {
+    document.getElementById('transcribedContent').textContent = transcribedText;
+    document.getElementById('transcribedText').classList.add('show');
+  } else {
+    document.getElementById('transcribedText').classList.remove('show');
+  }
+
+  document.getElementById('resultCard').classList.add('show');
+}
+
+function analyzeText() {
+  var text = document.getElementById('dialogueInput').value.trim();
+  if (!text) { alert('Please enter a dialogue first!'); return; }
+  var btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.textContent = 'ANALYZING...';
+  fetch('/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: text })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) { showResult(data.label, data.confidence, null); })
+  .catch(function(e) { alert('Error: ' + e.message); })
+  .finally(function() { btn.disabled = false; btn.textContent = 'ANALYZE DIALOGUE'; });
+}
+
+function analyzeAudio() {
+  var fileInput = document.getElementById('audioFile');
+  if (!fileInput.files || !fileInput.files[0]) { alert('Please select an audio file first!'); return; }
+  var btn = document.getElementById('audioBtn');
+  btn.disabled = true;
+  btn.textContent = 'TRANSCRIBING... (may take 30s)';
+  var formData = new FormData();
+  formData.append('audio', fileInput.files[0]);
+  fetch('/transcribe', {
+    method: 'POST',
+    body: formData
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.error) { alert('Error: ' + data.error); return; }
+    showResult(data.label, data.confidence, data.text);
+  })
+  .catch(function(e) { alert('Error: ' + e.message); })
+  .finally(function() { btn.disabled = false; btn.textContent = 'TRANSCRIBE & ANALYZE'; });
+}
+</script>
+</body>
+</html>
